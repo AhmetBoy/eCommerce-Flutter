@@ -15,6 +15,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Product>> _productsFuture;
+  final TextEditingController _searchController = TextEditingController();
+  List<Product> _filteredProducts = [];
+  List<Product> _allProducts = [];
 
   @override
   void initState() {
@@ -22,11 +25,34 @@ class _HomeScreenState extends State<HomeScreen> {
     _productsFuture = ApiService.fetchProducts();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _onRefresh() async {
     setState(() {
       _productsFuture = ApiService.fetchProducts(forceRefresh: true);
     });
     await _productsFuture;
+  }
+
+  void _filterProducts(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _filteredProducts = _allProducts;
+      });
+    } else {
+      setState(() {
+        _filteredProducts = _allProducts
+            .where(
+              (product) =>
+                  product.name.toLowerCase().contains(query.toLowerCase()),
+            )
+            .toList();
+      });
+    }
   }
 
   void _openCart() {
@@ -99,6 +125,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SizedBox(height: 8),
               SearchBar(
+                controller: _searchController,
+                onChanged: _filterProducts,
                 textStyle: WidgetStateProperty.all(
                   TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
@@ -150,11 +178,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       return const Center(child: Text('Ürün bulunamadı'));
                     }
 
-                    final products = snapshot.data!;
-                    final previewProducts = products.toList();
+                    _allProducts = snapshot.data!;
+                    if (_searchController.text.isEmpty) {
+                      _filteredProducts = _allProducts;
+                    }
+
+                    final productsToDisplay =
+                        _filteredProducts.isEmpty &&
+                            _searchController.text.isNotEmpty
+                        ? _allProducts
+                        : (_searchController.text.isEmpty
+                              ? _allProducts
+                              : _filteredProducts);
 
                     return GridView.builder(
-                      itemCount: previewProducts.length,
+                      itemCount: productsToDisplay.length,
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisSpacing: 2,
@@ -163,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             childAspectRatio: 0.75,
                           ),
                       itemBuilder: (context, index) {
-                        final product = previewProducts[index];
+                        final product = productsToDisplay[index];
                         return ProductCard(
                           product: product,
                           onTap: () {
