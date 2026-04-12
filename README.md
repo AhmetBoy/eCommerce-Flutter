@@ -30,8 +30,8 @@ Flutter SDK: ^3.10.4
 
 1. **Projeyi klonlayın:**
    ```bash
-   git clone <repository-url>
-   cd my_flutter_app
+   git clone <https://github.com/AhmetBoy/eCommerce-Flutter.git>
+   cd eCommerce-Flutter
    ```
 
 2. **Bağımlılıkları yükleyin:**
